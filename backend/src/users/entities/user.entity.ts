@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { Comment } from '../../comments/entities/comment.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -24,10 +25,10 @@ export class User extends BaseEntity {
   @Column()
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'first_name', nullable: true })
   firstName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'last_name', nullable: true })
   lastName: string;
 
   @Column({ nullable: true })
@@ -59,10 +60,10 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   location: string;
 
-  @Column({ default: false })
+  @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;
 
   @OneToMany(() => Post, (post) => post.author)
@@ -70,4 +71,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Comment, (comment) => comment.author)
   comments: Comment[];
+
+  @OneToMany(() => Bet, (bet) => bet.user)
+  bets: Bet[];
 }
