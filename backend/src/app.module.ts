@@ -7,8 +7,12 @@ import { Post } from './posts/entities/post.entity';
 import { Comment } from './comments/entities/comment.entity';
 import { Category } from './categories/entities/category.entity';
 import { Media } from './media/entities/media.entity';
+import { Match } from './matches/entities/match.entity';
+import { Bet } from './bets/entities/bet.entity';
 import configuration from './config/configuration';
 import { AuthModule } from './auth/auth.module';
+import { BetsModule } from './bets/bets.module';
+import { MatchesModule } from './matches/matches.module';
 import { validate } from './common/config/env.validation';
 
 @Module({
@@ -25,8 +29,18 @@ import { validate } from './common/config/env.validation';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Post, Comment, Category, Media]),
+    TypeOrmModule.forFeature([
+      User,
+      Post,
+      Comment,
+      Category,
+      Media,
+      Match,
+      Bet,
+    ]),
     AuthModule,
+    BetsModule,
+    MatchesModule,
   ],
   controllers: [],
   providers: [],
