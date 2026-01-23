@@ -1,5 +1,6 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
+import { Prediction } from '../../predictions/entities/prediction.entity';
 
 export enum MatchStatus {
   UPCOMING = 'upcoming',
@@ -81,4 +82,7 @@ export class Match extends BaseEntity {
 
   @Column({ type: 'json', nullable: true })
   metadata: Record<string, any>;
+
+  @OneToMany(() => Prediction, (prediction) => prediction.match)
+  predictions: Prediction[];
 }

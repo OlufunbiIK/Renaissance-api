@@ -4,6 +4,7 @@ import { Post } from '../../posts/entities/post.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { Bet } from '../../bets/entities/bet.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
+import { Prediction } from '../../predictions/entities/prediction.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -87,4 +88,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
+
+  @OneToMany(() => Prediction, (prediction) => prediction.user, { cascade: true })
+  predictions: Prediction[];
 }
