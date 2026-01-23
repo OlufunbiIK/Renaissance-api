@@ -10,6 +10,7 @@ import { Media } from './media/entities/media.entity';
 import { Match } from './matches/entities/match.entity';
 import { Bet } from './bets/entities/bet.entity';
 import { PlayerCardMetadata } from './player-card-metadata/entities/player-card-metadata.entity';
+import { Prediction } from './predictions/entities/prediction.entity';
 import configuration from './config/configuration';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -18,6 +19,7 @@ import { BetsModule } from './bets/bets.module';
 import { MatchesModule } from './matches/matches.module';
 import { PlayerCardMetadataModule } from './player-card-metadata/player-card-metadata.module';
 import { PostsModule } from './posts/posts.module';
+import { PredictionsModule } from './predictions/predictions.module';
 import { validate } from './common/config/env.validation';
 
 @Module({
@@ -55,12 +57,14 @@ import { validate } from './common/config/env.validation';
       Match,
       Bet,
       PlayerCardMetadata,
+      Prediction,
     ]),
     AuthModule,
     BetsModule,
     MatchesModule,
     PlayerCardMetadataModule,
     PostsModule,
+    PredictionsModule,
   ],
   controllers: [],
   providers: [
