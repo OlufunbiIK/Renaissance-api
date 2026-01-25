@@ -12,6 +12,7 @@ import { Bet } from './bets/entities/bet.entity';
 import { PlayerCardMetadata } from './player-card-metadata/entities/player-card-metadata.entity';
 import { Prediction } from './predictions/entities/prediction.entity';
 import { Spin } from './spin/entities/spin.entity';
+import { SpinSession } from './spin/entities/spin-session.entity';
 import configuration from './config/configuration';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -50,9 +51,9 @@ import { SpinModule } from './spin/spin.module';
       }),
     }),
     TypeOrmModule.forRootAsync({
-     imports: [ConfigModule],
-     inject: [ConfigService],
-     useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
     }),
     TypeOrmModule.forFeature([
       User,
@@ -65,6 +66,7 @@ import { SpinModule } from './spin/spin.module';
       PlayerCardMetadata,
       Prediction,
       Spin,
+      SpinSession,
     ]),
     AuthModule,
     BetsModule,
@@ -73,7 +75,7 @@ import { SpinModule } from './spin/spin.module';
     PostsModule,
     PredictionsModule,
     SpinModule,
-    LeaderboardModule,
+    LeaderboardsModule,
   ],
   controllers: [],
   providers: [
@@ -83,4 +85,4 @@ import { SpinModule } from './spin/spin.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
