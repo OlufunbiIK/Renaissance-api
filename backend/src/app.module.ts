@@ -26,7 +26,6 @@ import { PostsModule } from './posts/posts.module';
 import { PredictionsModule } from './predictions/predictions.module';
 import { FreeBetVouchersModule } from './free-bet-vouchers/free-bet-vouchers.module';
 import { validate } from './common/config/env.validation';
-import { BlockchainModule } from './blockchain/blockchain.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module';
 import { SpinModule } from './spin/spin.module';
@@ -37,7 +36,6 @@ import { AdminModule } from './admin/admin.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { UserLeaderboardStats } from './leaderboard/entities/user-leaderboard-stats.entity';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
-
 
 @Module({
   imports: [
@@ -64,7 +62,8 @@ import { ReconciliationModule } from './reconciliation/reconciliation.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
+      useFactory: (configService: ConfigService) =>
+        getTypeOrmConfig(configService),
     }),
     TypeOrmModule.forFeature([
       User,
@@ -105,4 +104,4 @@ import { ReconciliationModule } from './reconciliation/reconciliation.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
