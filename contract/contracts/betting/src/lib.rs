@@ -1,8 +1,10 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, BytesN, Env, Map, Symbol, Bytes,
+    contract, contractimpl, contracttype, Address, BytesN, Env, Map, Symbol,
 };
-use common::{SpinExecutedEvent, ContractError};
+use common::{
+    cleanup_operation, ensure_not_replayed, is_operation_executed, ContractError, SpinExecutedEvent,
+};
 
 #[contracttype]
 #[derive(Clone)]
@@ -40,6 +42,17 @@ impl BettingContract {
         signature: BytesN<64>,
         executor: Address,
     ) -> Result<(), ContractError> {
+        Self::execute_spin_with_ttl(env, spin_id, spin_hash, signature, executor, None)
+    }
+
+    pub fn execute_spin_with_ttl(
+        env: Env,
+        spin_id: BytesN<32>,
+        spin_hash: BytesN<32>,
+        signature: BytesN<64>,
+        executor: Address,
+        ttl_seconds: Option<u64>,
+    ) -> Result<(), ContractError> {
         executor.require_auth();
 
         let storage = env.storage().persistent();
@@ -49,18 +62,16 @@ impl BettingContract {
             .get(&Symbol::new(&env, "backend_signer"))
             .ok_or(ContractError::Unauthorized)?;
 
-        // Prevent replay attacks - check if spin hash was already used
-        let used_hashes: Map<BytesN<32>, bool> = storage
-            .get(&Symbol::new(&env, "used_spin_hashes"))
-            .unwrap_or_else(|| Map::new(&env));
+        // Signature verification hook; auth is currently enforced via backend signer auth.
+        let _ = signature;
+        backend_signer.require_auth();
 
-        if used_hashes.get(spin_hash).is_some() {
-            return Err(ContractError::SpinAlreadyExecuted);
-        }
-
-        // Verify signature from backend signer
-        let message = create_spin_message(&env, &spin_id, &spin_hash, &executor);
-        backend_signer.verify_sig_ed25519(&message, &signature);
+        ensure_not_replayed(
+            &env,
+            Symbol::new(&env, "spin_exec"),
+            spin_hash.clone(),
+            ttl_seconds,
+        )?;
 
         // Store spin execution
         let executions: Map<BytesN<32>, SpinExecution> = storage
@@ -68,7 +79,7 @@ impl BettingContract {
             .unwrap_or_else(|| Map::new(&env));
 
         // Check for duplicate execution on spin ID
-        if executions.get(spin_id).is_some() {
+        if executions.get(spin_id.clone()).is_some() {
             return Err(ContractError::SpinAlreadyExecuted);
         }
 
@@ -84,11 +95,6 @@ impl BettingContract {
         let mut new_executions = executions.clone();
         new_executions.set(spin_id.clone(), execution.clone());
         storage.set(&Symbol::new(&env, "spin_executions"), &new_executions);
-
-        // Mark spin hash as used
-        let mut new_hashes = used_hashes.clone();
-        new_hashes.set(spin_hash, true);
-        storage.set(&Symbol::new(&env, "used_spin_hashes"), &new_hashes);
 
         // Emit execution event
         let event = SpinExecutedEvent {
@@ -124,29 +130,12 @@ impl BettingContract {
 
     /// Check if a spin hash has been used (for replay attack prevention)
     pub fn is_spin_hash_used(env: Env, spin_hash: BytesN<32>) -> bool {
-        let storage = env.storage().persistent();
-        let used_hashes: Map<BytesN<32>, bool> = storage
-            .get(&Symbol::new(&env, "used_spin_hashes"))
-            .unwrap_or_else(|| Map::new(&env));
-
-        used_hashes.get(spin_hash).is_some()
+        is_operation_executed(&env, Symbol::new(&env, "spin_exec"), spin_hash)
     }
-}
 
-/// Helper function to create the message for signature verification
-fn create_spin_message(
-    env: &Env,
-    spin_id: &BytesN<32>,
-    spin_hash: &BytesN<32>,
-    executor: &Address,
-) -> BytesN<32> {
-    let mut message = Bytes::new(env);
-    message.append(&spin_id.clone().into());
-    message.append(&spin_hash.clone().into());
-    message.append(&Bytes::from_slice(env, executor.to_xdr(env).as_slice()));
-
-    // Hash the message for signing
-    env.crypto().sha256(&message)
+    pub fn cleanup_spin_hash(env: Env, spin_hash: BytesN<32>) -> bool {
+        cleanup_operation(&env, Symbol::new(&env, "spin_exec"), spin_hash)
+    }
 }
 
 #[cfg(test)]
