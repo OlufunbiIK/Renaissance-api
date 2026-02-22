@@ -25,6 +25,7 @@ import { PlayerCardMetadataModule } from './player-card-metadata/player-card-met
 import { PostsModule } from './posts/posts.module';
 import { PredictionsModule } from './predictions/predictions.module';
 import { FreeBetVouchersModule } from './free-bet-vouchers/free-bet-vouchers.module';
+import { StakingModule } from './staking/staking.module';
 import { validate } from './common/config/env.validation';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module';
@@ -32,13 +33,18 @@ import { SpinModule } from './spin/spin.module';
 import { HealthModule } from './health/health.module';
 import { CacheConfigModule } from './common/cache/cache.module';
 import { AdminModule } from './admin/admin.module';
-
-import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { UserLeaderboardStats } from './leaderboard/entities/user-leaderboard-stats.entity';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
+import { UsersModule } from './users/users.module';
 
 import { LoggerModule } from './common/logger/logger.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { SpinGameModule } from './spin-game/spin-game.module';
+import { Leaderboard } from './leaderboard/entities/leaderboard.entity';
+import { CircuitBreakerGuard } from './auth/guards/circuit-breaker.guard';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { EventListenerModule } from './common/events/event-listener.module';
+import { NftModule } from './nft/nft.module';
 
 
 @Module({
@@ -79,38 +85,41 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
       Bet,
       PlayerCardMetadata,
       Prediction,
+      Leaderboard,
       FreeBetVoucher,
       Spin,
       SpinSession,
       UserLeaderboardStats,
     ]),
-    AuthModule,
-    BetsModule,
-    MatchesModule,
-    PlayerCardMetadataModule,
-    PostsModule,
-    PredictionsModule,
+    SpinGameModule,
+    RateLimitModule,
+    StakingModule,
     LeaderboardModule,
     FreeBetVouchersModule,
     SpinModule,
-    LeaderboardModule,
     LeaderboardsModule,
+    UsersModule,
     HealthModule,
     CacheConfigModule,
     AdminModule,
     ReconciliationModule,
     LoggerModule,
+    EventListenerModule,
+    NftModule,
   ],
-  controllers: [],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: CircuitBreakerGuard,
+    },
   ],
 })
 export class AppModule {
-    configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer) {
     consumer.apply(CorrelationIdMiddleware).forRoutes('*');
   }
 }

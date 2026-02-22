@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -28,14 +29,8 @@ export class AuthService {
     return null;
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const payload = {
+  async login(user: User): Promise<AuthResponseDto> {
+    const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
@@ -69,7 +64,7 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
 
-    const payload = {
+    const payload: JwtPayload = {
       sub: savedUser.id,
       email: savedUser.email,
       role: savedUser.role,
@@ -86,7 +81,7 @@ export class AuthService {
     };
   }
 
-  async validateToken(token: string): Promise<any> {
+  async validateToken(token: string): Promise<JwtPayload> {
     try {
       return this.jwtService.verify(token);
     } catch (error) {

@@ -125,4 +125,36 @@ export class AuthController {
   async getProfile(@Request() req) {
     return req.user;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('verify')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Verify JWT token',
+    description: 'Validates if the provided JWT token is valid and not expired',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token is valid',
+    schema: {
+      example: {
+        valid: true,
+        user: {
+          userId: '123e4567-e89b-12d3-a456-426614174000',
+          email: 'john.doe@example.com',
+          role: 'user',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or expired token',
+  })
+  async verifyToken(@Request() req) {
+    return {
+      valid: true,
+      user: req.user,
+    };
+  }
 }
