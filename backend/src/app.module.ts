@@ -44,6 +44,7 @@ import { Leaderboard } from './leaderboard/entities/leaderboard.entity';
 import { CircuitBreakerGuard } from './auth/guards/circuit-breaker.guard';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { EventListenerModule } from './common/events/event-listener.module';
+import { NftModule } from './nft/nft.module';
 
 
 @Module({
@@ -104,6 +105,7 @@ import { EventListenerModule } from './common/events/event-listener.module';
     ReconciliationModule,
     LoggerModule,
     EventListenerModule,
+    NftModule,
   ],
   providers: [
     {
