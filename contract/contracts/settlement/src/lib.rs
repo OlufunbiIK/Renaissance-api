@@ -156,10 +156,13 @@ impl SettlementContract {
         storage.set(&DataKey::Settled(bet_id.clone()), &true);
         storage.set(&DataKey::Settled(bet_id), &true); // ensure presence
 
-        env.events().publish((Symbol::new(&env, "settle"),), record);
+   
+     
+
+     
 
         env.events()
-            .publish((Symbol::new(&env, "settlement_executed"),), event);
+            .publish((Symbol::new(&env, "settlement_executed"),), event,record);
 
         Ok(())
     }

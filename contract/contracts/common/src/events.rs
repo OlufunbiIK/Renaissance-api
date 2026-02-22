@@ -1,9 +1,39 @@
-use soroban_sdk::{contracttype, Address, BytesN, Env, Map, String, Symbol, U256};
+
+use soroban_sdk::{contracttype, Address, Symbol, BytesN, Env, Map, String, Symbol, U256};
 
 // ===== CORE EVENTS =====
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StakeEvent {
+    pub user: Address,
+    pub amount: i128,
+    pub token_address: Address,
+    pub staking_contract: Address,
+    pub timestamp: u64,
+    pub stake_id: U256,
+}
+
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UnstakeEvent {
+    pub user: Address,
+    pub amount: i128,
+    pub token_address: Address,
+    pub staking_contract: Address,
+    pub timestamp: u64,
+    pub stake_id: U256,
+    pub rewards: i128,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BetEvent {
+    pub bettor: Address,
+    pub amount: i128,
+    pub bet_id: U256,
+    pub betting_contract: Address,
 pub struct SpinExecutedEvent {
     pub spin_id: BytesN<32>,
     pub executor: Address,
@@ -38,6 +68,14 @@ pub struct NFTMintEvent {
 pub struct ReplayRejectedEvent {
     pub operation_hash: BytesN<32>,
     pub scope: Symbol,
+    pub timestamp: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SpinExecutedEvent {
+    pub spin_id: BytesN<32>,
+    pub executor: Address,
     pub timestamp: u64,
 }
 
