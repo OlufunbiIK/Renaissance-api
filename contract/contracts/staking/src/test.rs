@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::{StakingContract, StakingContractClient};
 use common::errors::ContractError;
 use soroban_sdk::testutils::{Address as _, Ledger};
