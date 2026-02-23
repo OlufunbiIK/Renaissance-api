@@ -45,6 +45,7 @@ import { CircuitBreakerGuard } from './auth/guards/circuit-breaker.guard';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { EventListenerModule } from './common/events/event-listener.module';
 import { NftModule } from './nft/nft.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
@@ -106,6 +107,7 @@ import { NftModule } from './nft/nft.module';
     LoggerModule,
     EventListenerModule,
     NftModule,
+    NotificationsModule,
   ],
   providers: [
     {
