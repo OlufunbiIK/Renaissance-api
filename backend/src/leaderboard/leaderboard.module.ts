@@ -1,25 +1,19 @@
 import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
+import { Leaderboard } from './entities/leaderboard.entity';
 import { LeaderboardStats } from './entities/leaderboard-stats.entity';
 import { UserLeaderboardStats } from './entities/user-leaderboard-stats.entity';
 import { LeaderboardService } from './leaderboard.service';
-
-@Module({
-    imports: [TypeOrmModule.forFeature([LeaderboardStats, UserLeaderboardStats])],
-    providers: [LeaderboardService],
-    exports: [LeaderboardService],
-})
-export class LeaderboardModule { }
-
 import { User } from '../users/entities/user.entity';
 import { LeaderboardController } from './leaderboard.controller';
 import { LeaderboardQueryService } from './leaderboard-query.service';
+import { SpinSettledEventHandler } from './listeners/spin-settled.listener';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([Leaderboard, LeaderboardStats, UserLeaderboardStats, User]), CqrsModule],
   controllers: [LeaderboardController],
-  providers: [LeaderboardQueryService],
+  providers: [LeaderboardService, LeaderboardQueryService, SpinSettledEventHandler],
+  exports: [LeaderboardService],
 })
 export class LeaderboardModule {}
-

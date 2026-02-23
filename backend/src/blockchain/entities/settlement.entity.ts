@@ -1,11 +1,9 @@
 import {
   Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity';
 
 export enum SettlementStatus {
   PENDING = 'PENDING',
@@ -16,16 +14,13 @@ export enum SettlementStatus {
 @Entity()
 @Index(['status'])
 @Index(['betId'])
-@Index(['referenceId'])
-export class Settlement {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ unique: true })
-  referenceId: string;
-
-  @Column()
-  betId: string;
+  @Index(['referenceId'])
+  export class Settlement extends BaseEntity {
+    @Column({ unique: true })
+    referenceId: string;
+  
+    @Column()
+    betId: string;
 
   @Column('decimal', { precision: 18, scale: 7 })
   amount: number;
@@ -42,10 +37,5 @@ export class Settlement {
     default: SettlementStatus.PENDING,
   })
   status: SettlementStatus;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
+// ...BaseEntity fields: id, createdAt, updatedAt, deletedAt

@@ -5,6 +5,9 @@ import { AppModule } from './app.module';
 import { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppLogger } from './common/logger/app.logger';
+
+import { AppLogger } from './common/logger/logger.service';
+
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
@@ -35,11 +38,11 @@ async function bootstrap() {
   // Global validation pipeline
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip properties that don't have decorators
-      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties exist
-      transform: true, // Automatically transform payloads to DTO instances
+      whitelist: true, 
+      forbidNonWhitelisted: true, 
+      transform: true, 
       transformOptions: {
-        enableImplicitConversion: true, // Allow implicit type conversion
+        enableImplicitConversion: true,
       },
     }),
   );
