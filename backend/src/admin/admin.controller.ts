@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { AdminAnalyticsService } from './admin-analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,7 +25,10 @@ import { AdminAuditLog, AdminActionType } from './entities/admin-audit-log.entit
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly analyticsService: AdminAnalyticsService,
+  ) {}
 
   /**
    * Cancel a pending bet and refund the stake
@@ -108,6 +112,52 @@ export class AdminController {
     const result = await this.adminService.getUserAuditLogs(userId, page, limit);
     return {
       ...result,
+      page,
+      limit,
+    };
+  }
+
+  // ------------------------------
+  // New Analytics Endpoints (#147)
+  // ------------------------------
+
+  @Get('analytics/users/total')
+  async totalUsers() {
+    return { total: await this.analyticsService.getTotalUsers() };
+  }
+
+  @Get('analytics/staked/total')
+  async totalStaked() {
+    return { total: await this.analyticsService.getTotalStaked() };
+  }
+
+  @Get('analytics/treasury/total')
+  async treasuryBalance() {
+    return { total: await this.analyticsService.getTreasuryBalance() };
+  }
+
+  @Get('analytics/spin/revenue-payouts')
+  async spinRevenueVsPayouts() {
+    return await this.analyticsService.getSpinRevenueVsPayouts();
+  }
+
+  @Get('analytics/bets/open')
+  async openBets() {
+    return { total: await this.analyticsService.getOpenBets() };
+  }
+
+  @Get('analytics/users/suspicious')
+  async suspiciousUsers(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+  ) {
+    const users = await this.analyticsService.getSuspiciousUsers();
+    // Simple pagination for large result sets
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    return {
+      data: users.slice(start, end),
+      total: users.length,
       page,
       limit,
     };
