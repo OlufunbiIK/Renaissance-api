@@ -48,7 +48,10 @@ import { CircuitBreakerGuard } from './auth/guards/circuit-breaker.guard';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { EventListenerModule } from './common/events/event-listener.module';
 import { NftModule } from './nft/nft.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
+// Custom role-based guard
+import { RateLimitGuard } from './common/guards/rate-limit.guard';
 
 @Module({
   imports: [
@@ -67,7 +70,7 @@ import { NftModule } from './nft/nft.module';
         throttlers: [
           {
             ttl: config.get<number>('THROTTLE_TTL', 60000), // 60 seconds
-            limit: config.get<number>('THROTTLE_LIMIT', 10), // 10 requests
+            limit: config.get<number>('THROTTLE_LIMIT', 10), // default 10 requests/min
           },
         ],
       }),
@@ -112,11 +115,16 @@ import { NftModule } from './nft/nft.module';
     ProgressModule,
     SolvencyModule,
     AuditModule,
+    NotificationsModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ThrottlerGuard, // baseline throttling
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard, // role-based limits
     },
     {
       provide: APP_GUARD,

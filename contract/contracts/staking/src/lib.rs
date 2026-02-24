@@ -1,21 +1,3 @@
-use soroban_sdk::{contract, contractimpl, Env, Address};
-use common::{types::StakeId, storage_keys::*};
-
-#[contract]
-pub struct Staking;
-
-#[contractimpl]
-impl Staking {
-    pub fn stake(env: Env, user: Address, stake_id: StakeId, amount: i128) {
-        let key = format!("{}{}", STAKE_INFO, stake_id.0);
-        env.storage().set(&key, &amount);
-    }
-
-    pub fn unstake(env: Env, user: Address, stake_id: StakeId) {
-        let key = format!("{}{}", STAKE_INFO, stake_id.0);
-        env.storage().remove(&key);
-    }
-}
 #![no_std]
 
 use common::errors::ContractError;
@@ -24,6 +6,47 @@ use soroban_sdk::{contract, contractimpl, token, Address, Env, U256};
 
 pub mod storage;
 use storage::{DataKey, StakeData};
+
+// Helper to keep per-user active staking duration up to date whenever their
+// total staked amount changes between zero and non-zero.
+fn update_user_active_duration_on_change(
+    env: &Env,
+    user: &Address,
+    old_total: i128,
+    new_total: i128,
+) {
+    let was_active = old_total > 0;
+    let is_active = new_total > 0;
+
+    // Only care about transitions between inactive (0) and active (>0)
+    if was_active == is_active {
+        return;
+    }
+
+    let now = env.ledger().timestamp();
+    let active_since_key = DataKey::ActiveSince(user.clone());
+    let total_duration_key = DataKey::TotalStakeDuration(user.clone());
+
+    if !was_active && is_active {
+        // User becomes active: remember when they started this active period.
+        env.storage().persistent().set(&active_since_key, &now);
+    } else if was_active && !is_active {
+        // User stops being active: add the elapsed time to their total duration.
+        let maybe_active_since: Option<u64> = env.storage().persistent().get(&active_since_key);
+        if let Some(active_since) = maybe_active_since {
+            let elapsed = now - active_since;
+            let total_duration: u64 = env
+                .storage()
+                .persistent()
+                .get(&total_duration_key)
+                .unwrap_or(0);
+            env.storage()
+                .persistent()
+                .set(&total_duration_key, &(total_duration + elapsed));
+            env.storage().persistent().remove(&active_since_key);
+        }
+    }
+}
 
 #[contract]
 pub struct StakingContract;
@@ -97,7 +120,7 @@ impl StakingContract {
 
         // Transfer tokens to contract
         let token_client = token::Client::new(&env, &staking_token);
-        token_client.transfer(&user, &env.current_contract_address(), &amount);
+        token_client.transfer(&user, env.current_contract_address(), &amount);
 
         // Generate stake ID based on user nonce
         let nonce_key = DataKey::StakeNonce(user.clone());
@@ -114,12 +137,14 @@ impl StakingContract {
             &stake_data,
         );
 
-        // Update total stake
+        // Update total stake and per-user active duration
         let total_key = DataKey::TotalStake(user.clone());
         let current_total: i128 = env.storage().persistent().get(&total_key).unwrap_or(0);
-        env.storage()
-            .persistent()
-            .set(&total_key, &(current_total + amount));
+        let new_total = current_total + amount;
+
+        update_user_active_duration_on_change(&env, &user, current_total, new_total);
+
+        env.storage().persistent().set(&total_key, &new_total);
 
         // Emit Event
         let mut event = create_stake_event(
@@ -130,6 +155,7 @@ impl StakingContract {
             stake_id.clone(),
         );
         event.timestamp = timestamp;
+        #[allow(deprecated)] // keep (topic, user) format for indexer compatibility
         env.events().publish((STAKE_EVENT, user.clone()), event);
 
         Ok(stake_id)
@@ -164,10 +190,13 @@ impl StakingContract {
         // Remove the stake
         env.storage().persistent().remove(&stake_key);
 
-        // Update total stake
+        // Update total stake and per-user active duration
         let total_key = DataKey::TotalStake(user.clone());
         let current_total: i128 = env.storage().persistent().get(&total_key).unwrap_or(0);
         let new_total = current_total - stake_data.amount;
+
+        update_user_active_duration_on_change(&env, &user, current_total, new_total);
+
         if new_total > 0 {
             env.storage().persistent().set(&total_key, &new_total);
         } else {
@@ -188,6 +217,7 @@ impl StakingContract {
             0, // Rewards are not implemented in this version, hardcode 0
         );
         event.timestamp = current_time;
+        #[allow(deprecated)] // keep (topic, user) format for indexer compatibility
         env.events().publish((UNSTAKE_EVENT, user.clone()), event);
 
         Ok(())
@@ -206,8 +236,48 @@ impl StakingContract {
             .get(&DataKey::UserStake(user, stake_id))
             .ok_or(ContractError::StakeNotFound)
     }
+
+    // Returns the cumulative active staking duration for a user in seconds.
+    // This is the total time the user has had a non-zero total staked balance.
+    pub fn get_user_active_duration(env: Env, user: Address) -> u64 {
+        let total_key = DataKey::TotalStake(user.clone());
+        let current_total: i128 = env.storage().persistent().get(&total_key).unwrap_or(0);
+
+        let total_duration_key = DataKey::TotalStakeDuration(user.clone());
+        let mut total_duration: u64 = env
+            .storage()
+            .persistent()
+            .get(&total_duration_key)
+            .unwrap_or(0);
+
+        if current_total > 0 {
+            let active_since_key = DataKey::ActiveSince(user.clone());
+            let maybe_active_since: Option<u64> = env.storage().persistent().get(&active_since_key);
+            if let Some(active_since) = maybe_active_since {
+                let now = env.ledger().timestamp();
+                total_duration += now - active_since;
+            }
+        }
+
+        total_duration
+    }
+
+    // Returns the active duration (in seconds) for a specific stake position.
+    // This is a simple "now - timestamp" calculation with no on-chain loops.
+    pub fn get_stake_duration(
+        env: Env,
+        user: Address,
+        stake_id: U256,
+    ) -> Result<u64, ContractError> {
+        let stake_data: StakeData = env
+            .storage()
+            .persistent()
+            .get(&DataKey::UserStake(user, stake_id))
+            .ok_or(ContractError::StakeNotFound)?;
+        let now = env.ledger().timestamp();
+        Ok(now - stake_data.timestamp)
+    }
 }
 
 #[cfg(test)]
 mod test;
-

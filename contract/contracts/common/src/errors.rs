@@ -21,6 +21,6 @@ pub enum ContractError {
     StakeNotFound = 15,
     NotInitialized = 16,
     AlreadyInitialized = 17,
-    BetAlreadyPlaced = 13,
-    DuplicateOperation = 14,
+    BetAlreadyPlaced = 18,
+    DuplicateOperation = 19,
 }

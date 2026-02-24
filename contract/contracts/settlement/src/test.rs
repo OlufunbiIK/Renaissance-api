@@ -91,7 +91,7 @@ fn settle_bet_without_backend_auth_fails() {
     client.initialize(&backend);
 
     let operation_hash = BytesN::from_array(&env, &[1u8; 32]);
-    
+
     // Don't mock any auths - should fail with Unauthorized
     client.settle_bet(
         &operation_hash,
@@ -107,7 +107,7 @@ fn settle_bet_without_backend_auth_fails() {
 fn settle_bet_before_initialization_fails() {
     let env = Env::default();
     env.mock_all_auths();
-    
+
     let winner = Address::generate(&env);
     let contract_id = env.register(SettlementContract, ());
     let client = SettlementContractClient::new(&env, &contract_id);
@@ -115,7 +115,7 @@ fn settle_bet_before_initialization_fails() {
     // Don't initialize - try to settle immediately
     // This will panic because there's no backend signer stored
     let operation_hash = BytesN::from_array(&env, &[1u8; 32]);
-    
+
     client.settle_bet(
         &operation_hash,
         &U256::from_u32(&env, 1),
@@ -141,7 +141,7 @@ fn is_operation_executed_returns_false_for_new_operation() {
     client.initialize(&backend);
 
     let new_operation_hash = BytesN::from_array(&env, &[1u8; 32]);
-    
+
     assert!(!client.is_operation_executed(&new_operation_hash));
 }
 
@@ -157,7 +157,7 @@ fn cleanup_operation_returns_false_for_nonexistent_operation() {
     client.initialize(&backend);
 
     let nonexistent_hash = BytesN::from_array(&env, &[99u8; 32]);
-    
+
     assert!(!client.cleanup_operation(&nonexistent_hash));
 }
 
@@ -183,7 +183,7 @@ fn cleanup_operation_returns_false_before_ttl_expires() {
         &1000,
         &Some(100),
     );
-    
+
     // Advance time but not past TTL
     env.ledger().with_mut(|li| {
         li.timestamp += 50;
@@ -297,7 +297,7 @@ fn settle_bet_with_zero_ttl_immediate_cleanup() {
         &1000,
         &Some(0),
     );
-    
+
     // With TTL of 0, the operation is considered expired immediately
     // so it won't be stored (it gets cleaned up during ensure_not_replayed)
     // This is existing contract behavior, not a bug
@@ -431,17 +431,11 @@ fn large_bet_id_handling() {
     client.initialize(&backend);
 
     let operation_hash = BytesN::from_array(&env, &[1u8; 32]);
-    
+
     // Use a large U256 value for bet_id
     let large_bet_id = U256::from_u128(&env, u128::MAX);
 
-    client.settle_bet(
-        &operation_hash,
-        &large_bet_id,
-        &winner,
-        &1000,
-        &None,
-    );
+    client.settle_bet(&operation_hash, &large_bet_id, &winner, &1000, &None);
 
     assert!(client.is_operation_executed(&operation_hash));
 }
@@ -478,7 +472,14 @@ fn test_settle_win_loss_draw() {
 
     // Settle WIN: bettor locked 100 -> winner gets payout 200
     let win_sym = soroban_sdk::Symbol::short("WIN");
-    let res = st_client.settle_bet(&bet_id, &bettor, &Some(winner.clone()), &100, &200, &win_sym);
+    let res = st_client.settle_bet(
+        &bet_id,
+        &bettor,
+        &Some(winner.clone()),
+        &100,
+        &200,
+        &win_sym,
+    );
     assert!(res.is_ok());
 
     // Check balances: bettor locked decreased by 100, winner withdrawable increased by 200
@@ -489,7 +490,14 @@ fn test_settle_win_loss_draw() {
     assert_eq!(winner_balance, 200);
 
     // Attempt to re-settle same bet -> should fail
-    let res2 = st_client.try_settle_bet(&bet_id, &bettor, &Some(winner.clone()), &100, &200, &win_sym);
+    let res2 = st_client.try_settle_bet(
+        &bet_id,
+        &bettor,
+        &Some(winner.clone()),
+        &100,
+        &200,
+        &win_sym,
+    );
     assert!(res2.is_err());
 
     // Test DRAW / refund for another bet
