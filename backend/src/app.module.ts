@@ -41,6 +41,9 @@ import { LoggerModule } from './common/logger/logger.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { SpinGameModule } from './spin-game/spin-game.module';
 import { Leaderboard } from './leaderboard/entities/leaderboard.entity';
+import { ProgressModule } from './progress/progress.module';
+import { SolvencyModule } from './solvency/solvency.module';
+import { AuditModule } from './audit/audit.module';
 import { CircuitBreakerGuard } from './auth/guards/circuit-breaker.guard';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { EventListenerModule } from './common/events/event-listener.module';
@@ -106,6 +109,9 @@ import { NftModule } from './nft/nft.module';
     LoggerModule,
     EventListenerModule,
     NftModule,
+    ProgressModule,
+    SolvencyModule,
+    AuditModule,
   ],
   providers: [
     {
