@@ -281,3 +281,11 @@ impl StakingContract {
 
 #[cfg(test)]
 mod test;
+
+mod fixed_term;
+mod fixed_storage;
+mod fixed_types;
+mod fixed_errors;
+mod fixed_events;
+
+use fixed_term::FixedLockStaking;
