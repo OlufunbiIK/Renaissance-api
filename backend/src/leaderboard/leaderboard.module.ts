@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Leaderboard } from './entities/leaderboard.entity';
 import { LeaderboardStats } from './entities/leaderboard-stats.entity';
 import { UserLeaderboardStats } from './entities/user-leaderboard-stats.entity';
+import { Season } from './entities/season.entity';
+import { SeasonalLeaderboard } from './entities/seasonal-leaderboard.entity';
 import { LeaderboardService } from './leaderboard.service';
 import { User } from '../users/entities/user.entity';
 import { LeaderboardController } from './leaderboard.controller';
@@ -12,17 +14,34 @@ import { LeaderboardAggregationService } from './leaderboard-aggregation.service
 import { LeaderboardSyncService } from './leaderboard-sync.service';
 import { LeaderboardGateway } from './leaderboard.gateway';
 import { SpinSettledEventHandler } from './listeners/spin-settled.listener';
+import { SeasonService } from './services/season.service';
+import { SeasonalLeaderboardService } from './services/seasonal-leaderboard.service';
+import { SeasonResetService } from './services/season-reset.service';
+import { SeasonController } from './controllers/season.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Leaderboard, LeaderboardStats, UserLeaderboardStats, User]), CqrsModule],
-  controllers: [LeaderboardController],
+  imports: [
+    TypeOrmModule.forFeature([
+      Leaderboard,
+      LeaderboardStats,
+      UserLeaderboardStats,
+      User,
+      Season,
+      SeasonalLeaderboard,
+    ]),
+    CqrsModule,
+  ],
+  controllers: [LeaderboardController, SeasonController],
   providers: [
-    LeaderboardService, 
-    LeaderboardQueryService, 
+    LeaderboardService,
+    LeaderboardQueryService,
     SpinSettledEventHandler,
     LeaderboardAggregationService,
     LeaderboardSyncService,
     LeaderboardGateway,
+    SeasonService,
+    SeasonalLeaderboardService,
+    SeasonResetService,
   ],
   exports: [
     LeaderboardService,
@@ -30,6 +49,9 @@ import { SpinSettledEventHandler } from './listeners/spin-settled.listener';
     LeaderboardAggregationService,
     LeaderboardSyncService,
     LeaderboardGateway,
+    SeasonService,
+    SeasonalLeaderboardService,
+    SeasonResetService,
   ],
 })
 export class LeaderboardModule {}
